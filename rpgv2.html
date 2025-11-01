@@ -1,0 +1,89 @@
+local html = [[
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { background: rgba(0,0,0,0.8); color: white; font-family: Arial; }
+            .tab { display: inline-block; padding: 10px; cursor: pointer; }
+            .tab.active { background: rgba(255,0,0,0.5); }
+            .content { margin-top: 20px; }
+            button { background: red; color: white; padding: 5px 10px; border: none; cursor: pointer; }
+        </style>
+    </head>
+    <body>
+        <div id="tabs">
+            <div class="tab" data-tab="Player">Player</div>
+            <div class="tab" data-tab="Local">Local</div>
+            <div class="tab" data-tab="Online">Online Players</div>
+            <div class="tab" data-tab="Server">Server</div>
+        </div>
+        <div id="content" class="content"></div>
+        <script>
+            let currentTab = "Player";
+            document.addEventListener("DOMContentLoaded", () => {
+                document.querySelectorAll(".tab").forEach(tab => {
+                    tab.addEventListener("click", () => {
+                        currentTab = tab.getAttribute("data-tab");
+                        updateTabs();
+                        window.external.SendMessage(JSON.stringify({
+                            action: "switchTab",
+                            tab: currentTab
+                        }));
+                        updateContent();
+                    });
+                });
+            });
+
+            function updateTabs() {
+                document.querySelectorAll(".tab").forEach(tab => {
+                    if (tab.getAttribute("data-tab") === currentTab) {
+                        tab.classList.add("active");
+                    } else {
+                        tab.classList.remove("active");
+                    }
+                });
+            }
+
+            function updateContent() {
+                let content = document.getElementById("content");
+                content.innerHTML = "";
+                if (currentTab === "Player") {
+                    content.innerHTML = `
+                        <button onclick="executeCheat('godmode')">Godmode</button><br>
+                        <button onclick="executeCheat('noclip')">Noclip</button><br>
+                        <button onclick="executeCheat('giveMoney')">Geld Cheaten (1M)</button>
+                    `;
+                } else if (currentTab === "Local") {
+                    content.innerHTML = `<p>Local Cheats hier...</p>`;
+                } else if (currentTab === "Online") {
+                    content.innerHTML = `
+                        <input type="number" id="targetId" placeholder="Spieler-ID">
+                        <button onclick="executeCheat('teleportToPlayer')">Teleport zu Spieler</button>
+                    `;
+                } else if (currentTab === "Server") {
+                    content.innerHTML = `<button onclick="executeCheat('kickAll')">Alle Kicken</button>`;
+                }
+            }
+
+            function executeCheat(cheat) {
+                let data = { action: "executeCheat", cheat: cheat };
+                if (cheat === "teleportToPlayer") {
+                    data.targetId = document.getElementById("targetId").value;
+                }
+                window.external.SendMessage(JSON.stringify(data));
+            }
+
+            window.addEventListener("message", (event) => {
+                let data = JSON.parse(event.data);
+                if (data.action === "openMenu") {
+                    currentTab = data.tab;
+                    updateTabs();
+                    updateContent();
+                } else if (data.action === "notify") {
+                    alert(data.message);
+                }
+            });
+        </script>
+    </body>
+    </html>
+]]
